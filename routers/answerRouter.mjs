@@ -1,21 +1,15 @@
 import { Router } from "express";
 import connectionPool from "../utils/db.mjs"
+import { validationVote } from "../middlewares/vote.validation.mjs";
 
 const answerRouter = Router();
 
-answerRouter.post("/:answerId/vote", async (req, res) => {
+answerRouter.post("/:answerId/vote", [validationVote], async (req, res) => {
     const answerIdFromClient = req.params.answerId;
     const vote = Number(req.body.vote);
   
-    if(vote !== 1 && vote !== -1){
-      return res.status(400).json({
-        message: "Invalid vote value."
-      });
-    };
-  
     let result;
     try {
-      //middleware : answers POST
       const answerCheck = await connectionPool.query(
         `SELECT * FROM answers WHERE id = $1`,
         [answerIdFromClient]

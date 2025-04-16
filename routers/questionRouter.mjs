@@ -1,5 +1,8 @@
 import { Router } from "express";
 import connectionPool from "../utils/db.mjs"
+import { validationPostAndPutForQuestions } from "../middlewares/postAndPutForQuestions.validation.mjs";
+import { validationPostForCreateAnswers } from "../middlewares/postForCreateAnswers.valedation.mjs";
+import { validationVote } from "../middlewares/vote.validation.mjs";
 
 const questionRouter = Router();
 
@@ -67,7 +70,6 @@ questionRouter.get("/", async(req, res) => {
     let result;
   
     try{
-       //middleware: GET
        const questionCheck = await connectionPool.query(
         `SELECT * FROM questions WHERE id = $1`, [questionIdFromClient]
       );
@@ -98,7 +100,6 @@ questionRouter.get("/", async(req, res) => {
   
     let result;
     try{
-      //middleware: GET
       const questionCheck = await connectionPool.query(
         `SELECT * FROM questions WHERE id = $1`, [questionIdFromClient]
       );
@@ -125,29 +126,11 @@ questionRouter.get("/", async(req, res) => {
     });
   });
   
-  questionRouter.post("/", async (req, res) => {
+  questionRouter.post("/", [validationPostAndPutForQuestions], async (req, res) => {
   
     try {
       const {title, description, category} = req.body
      
-      if(!title) {
-        return res.status(400).json({
-          message: "Invalid request data. Title is required."
-        });
-      };
-  
-      if(!description) {
-        return res.status(400).json({
-          message: "Invalid request data. Description is required."
-        });
-      };
-  
-      if(!category) {
-        return res.status(400).json({
-          message: "Invalid request data. Category is required."
-        });
-      };
-  
       await connectionPool.query(
         `
         INSERT INTO questions (title, description, category)
@@ -167,25 +150,12 @@ questionRouter.get("/", async(req, res) => {
     });
   });
   
-  questionRouter.post("/:questionId/answers", async (req, res) => {
+  questionRouter.post("/:questionId/answers", [validationPostForCreateAnswers], async (req, res) => {
     const questionIdFromClient = req.params.questionId;  
     const { content } = req.body;
-  
-    if(!content){
-      return res.status(400).json({
-        message: "Invalid request data. Answer is required"
-      });
-    };
-    // middleware
-    if(content.length > 300) {
-      return res.status(400).json({
-        message: "Answer must not exceed 300 characters. "
-      });
-    };
-  
+    
     let result;
     try{
-      //middleware : POST
       const questionCheck = await connectionPool.query(
         `
         SELECT id FROM questions
@@ -216,19 +186,12 @@ questionRouter.get("/", async(req, res) => {
     });
   });
   
-  questionRouter.post("/:questionId/vote", async (req, res) => {
+  questionRouter.post("/:questionId/vote", [validationVote], async (req, res) => {
     const questionIdFromClient = req.params.questionId;
     const vote = Number(req.body.vote);
-    
-    if(vote !== 1 && vote !== -1) {
-      return res.status(400).json({
-        message: "Invalid vote value."
-      });
-    };
   
     let result;
     try{
-      //middleware : POST
       const questionCheck = await connectionPool.query(
         `
         SELECT id FROM questions
@@ -263,19 +226,12 @@ questionRouter.get("/", async(req, res) => {
     });
   });
   
-  questionRouter.put("/:questionId", async (req, res) => {
+  questionRouter.put("/:questionId", [validationPostAndPutForQuestions],async (req, res) => {
     const questionIdFromClient = req.params.questionId;
     const {title, description, category} = req.body;
   
-    if (!title || !description || !category) {
-      return res.status(400).json({
-        message: "Invalid request data."
-      });
-    };
-  
     let result;
     try{
-      //middleware : PUT
       const questionCheck = await connectionPool.query(
         `
         SELECT id FROM questions
@@ -322,7 +278,6 @@ questionRouter.get("/", async(req, res) => {
   
     let result;
     try {
-      //middleware : DELETE
       const questionCheck = await connectionPool.query(
         `SELECT * FROM questions WHERE id = $1`, 
         [questionIdFromClient]
@@ -358,7 +313,6 @@ questionRouter.get("/", async(req, res) => {
   
     let result;
     try{
-      //middleware : DELETE
       const questionCheck = await connectionPool.query(
         `SELECT * FROM questions WHERE id = $1`, 
         [questionIdFromClient]
